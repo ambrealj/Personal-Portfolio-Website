@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ambreal Jiang</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --cream: #f2ede4;
+    --warm-dark: #1a1510;
+    --muted-brown: #6b5f50;
+    --faded: #9e9082;
+    --accent: #c4a882;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--cream);
+    color: var(--warm-dark);
+    font-family: 'Space Mono', monospace;
+    font-size: 13px;
+    line-height: 1.7;
+    min-height: 100vh;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  /* Grain */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 100;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.12'/%3E%3C/svg%3E");
+    background-size: 180px 180px;
+    opacity: 0.55;
+    mix-blend-mode: multiply;
+  }
+
+  /* Vignette */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 99;
+    background: radial-gradient(ellipse at center, transparent 55%, rgba(26,21,16,0.35) 100%);
+  }
+
+  .site-wrapper { max-width: 820px; margin: 0 auto; padding: 0 2rem; }
+
+  /* ── Nav ── */
+  nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 2.5rem 0 2rem;
+    border-bottom: 1px solid rgba(107,95,80,0.2);
+  }
+
+  .logo {
+    font-family: 'IM Fell English', serif;
+    font-size: 20px;
+    letter-spacing: 0.02em;
+    color: var(--warm-dark);
+    font-style: italic;
+  }
+
+  .logo span {
+    font-size: 11px;
+    display: block;
+    font-family: 'Space Mono', monospace;
+    font-style: normal;
+    color: var(--faded);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-top: -2px;
+  }
+
+  .nav-links { display: flex; gap: 1.75rem; list-style: none; }
+
+  .nav-links a {
+    color: var(--muted-brown);
+    text-decoration: none;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    transition: color 0.2s;
+  }
+
+  .nav-links a:hover { color: var(--warm-dark); }
+
+  /* ── Film strip ── */
+  .film-strip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 3rem 0 0;
+  }
+
+  .film-hole {
+    width: 8px;
+    height: 10px;
+    border: 1px solid rgba(107,95,80,0.3);
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+
+  .film-line { flex: 1; height: 1px; background: rgba(107,95,80,0.15); }
+
+  .frame-num { font-size: 10px; color: var(--faded); letter-spacing: 0.1em; }
+
+  /* ── Section label ── */
+  .section-label {
+    font-size: 10px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--faded);
+    margin-bottom: 2.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: rgba(107,95,80,0.2);
+  }
+
+  /* ── Photo placeholders (reusable) ── */
+  .photo-wrap {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .photo-wrap::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border: 1px solid rgba(107,95,80,0.25);
+    z-index: 2;
+    pointer-events: none;
+  }
+
+  .photo-inner {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    display: flex;
+    align-items: flex-end;
+    padding: 0.75rem;
+  }
+
+  .photo-inner img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  /* caption overlay */
+  .photo-caption {
+    position: absolute;
+    left: 0.75rem;
+    right: 0.75rem;
+    bottom: 0.75rem;
+    z-index: 3;
+    padding: 0.45rem 0.6rem;
+    font-size: 9px;
+    letter-spacing: 0.14em;
+    color: #f2ede4;
+    text-transform: uppercase;
+    line-height: 1.4;
+    background: rgba(26,21,16,0.3);
+    border-radius: 4px;
+  }
+
+  .photo-caption br {
+    display: inline;
+  }
+
+  /* portrait silhouette */
+  .photo-inner.portrait { 
+    width: 100%;
+    height: 300px;
+}
+  
+  /* landscape / scene variants */
+  .photo-inner.scene-a { background: linear-gradient(135deg, #b5a898 0%, #8a7a6a 50%, #6a5a4a 100%); }
+  .photo-inner.scene-b { background: linear-gradient(160deg, #9aaa98 0%, #6a8068 60%, #4a6048 100%); }
+  .photo-inner.scene-c { background: linear-gradient(135deg, #aa9898 0%, #806868 50%, #5a4848 100%); }
+
+  /* horizon line decoration for scene photos */
+  .photo-inner.scene-a::before,
+  .photo-inner.scene-b::before,
+  .photo-inner.scene-c::before {
+    content: '';
+    position: absolute;
+    bottom: 35%; left: 0; right: 0;
+    height: 1px;
+    background: rgba(242,237,228,0.15);
+  }
+
+  /* ── About ── */
+  #about { padding: 5rem 0 4rem; }
+
+  /* Hero row: portrait left, text right */
+  .about-hero {
+    display: grid;
+    grid-template-columns: 1fr 1.15fr;
+    gap: 4rem;
+    align-items: start;
+    margin-bottom: 4rem;
+  }
+
+  .about-portrait { aspect-ratio: 3/4; }
+
+  .about-name {
+    font-family: 'IM Fell English', serif;
+    font-size: 40px;
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+    color: var(--warm-dark);
+    margin-bottom: 1.5rem;
+    padding-top: 0.25rem;
+  }
+
+  .about-name em { font-style: italic; color: var(--muted-brown); }
+
+  .about-bio {
+    color: var(--muted-brown);
+    font-size: 13px;
+    line-height: 1.85;
+    margin-bottom: 1.1rem;
+  }
+
+  .skills-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    margin: 1.5rem 0 0;
+  }
+
+  .skill-chip {
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted-brown);
+    padding: 3px 8px;
+    border: 1px solid rgba(107,95,80,0.25);
+  }
+
+  .about-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+    border-top: 1px solid rgba(107,95,80,0.15);
+    padding-top: 1.5rem;
+    margin-top: 1.5rem;
+  }
+
+  .meta-row { display: flex; gap: 1.5rem; font-size: 11px; }
+
+  .meta-key {
+    color: var(--faded);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    min-width: 76px;
+    flex-shrink: 0;
+  }
+
+  .meta-val { color: var(--warm-dark); }
+
+  /* Photo gallery strip below hero */
+  .about-gallery {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 3.5rem;
+  }
+
+  .about-gallery .photo-wrap { aspect-ratio: 4/3; }
+
+  .about-scene { aspect-ratio: 4/3; }
+
+  /* ── Education ── */
+  #education {
+    padding: 4rem 0;
+    border-top: 1px solid rgba(107,95,80,0.12);
+  }
+
+  .edu-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    margin-top: 2rem;
+  }
+
+  .edu-card {
+    padding: 1.75rem;
+    border: 1px solid rgba(107,95,80,0.18);
+    position: relative;
+  }
+
+  .edu-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px; height: 100%;
+    background: rgba(107,95,80,0.3);
+  }
+
+  .edu-degree {
+    font-family: 'IM Fell English', serif;
+    font-size: 17px;
+    font-style: italic;
+    color: var(--warm-dark);
+    margin-bottom: 0.3rem;
+  }
+
+  .edu-school {
+    font-size: 12px;
+    color: var(--muted-brown);
+    margin-bottom: 0.2rem;
+  }
+
+  .edu-dates {
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    color: var(--faded);
+    text-transform: uppercase;
+    margin-bottom: 1rem;
+  }
+
+  .edu-details {
+    font-size: 12px;
+    color: var(--muted-brown);
+    line-height: 1.75;
+  }
+
+  .edu-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-top: 1rem;
+  }
+
+  /* ── Experience ── */
+  #experience {
+    padding: 4rem 0;
+    border-top: 1px solid rgba(107,95,80,0.12);
+  }
+
+  .exp-list { display: flex; flex-direction: column; margin-top: 2rem; }
+
+  .exp-item {
+    display: grid;
+    grid-template-columns: 160px 1fr;
+    gap: 2rem;
+    padding: 2rem 0;
+    border-bottom: 1px solid rgba(107,95,80,0.1);
+  }
+
+  .exp-item:first-child { border-top: 1px solid rgba(107,95,80,0.1); }
+
+  .exp-left { padding-top: 2px; }
+
+  .exp-company {
+    font-size: 11px;
+    color: var(--warm-dark);
+    letter-spacing: 0.05em;
+    margin-bottom: 0.2rem;
+  }
+
+  .exp-dates {
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    color: var(--faded);
+    text-transform: uppercase;
+    line-height: 1.6;
+  }
+
+  .exp-role {
+    font-family: 'IM Fell English', serif;
+    font-size: 19px;
+    font-style: italic;
+    color: var(--warm-dark);
+    margin-bottom: 0.6rem;
+    line-height: 1.2;
+  }
+
+  .exp-desc {
+    font-size: 12px;
+    color: var(--muted-brown);
+    line-height: 1.8;
+    margin-bottom: 0.9rem;
+  }
+
+  .exp-bullets {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .exp-bullets li {
+    font-size: 12px;
+    color: var(--muted-brown);
+    line-height: 1.7;
+    padding-left: 1rem;
+    position: relative;
+  }
+
+  .exp-bullets li::before {
+    content: '—';
+    position: absolute;
+    left: 0;
+    color: var(--faded);
+  }
+
+  /* ── Projects ── */
+  #projects {
+    padding: 4rem 0;
+    border-top: 1px solid rgba(107,95,80,0.12);
+  }
+
+  .projects-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-top: 2rem;
+  }
+
+  .project-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    padding: 1.75rem;
+    border: 1px solid rgba(107,95,80,0.18);
+    color: inherit;
+    position: relative;
+    transition: border-color 0.2s, background 0.2s;
+  }
+
+  .project-card:hover {
+    border-color: rgba(107,95,80,0.4);
+    background: rgba(107,95,80,0.03);
+  }
+
+  .project-card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+  }
+
+  .project-frame-num {
+    font-size: 10px;
+    color: var(--faded);
+    letter-spacing: 0.1em;
+    font-style: italic;
+    font-family: 'IM Fell English', serif;
+  }
+
+  .project-arrow {
+    font-size: 18px;
+    color: var(--faded);
+    text-decoration: none;
+    transition: transform 0.2s, color 0.2s;
+    line-height: 1;
+    display: inline-block;
+  }
+
+  .project-arrow:hover,
+  .project-card:hover .project-arrow {
+    transform: translate(3px, -3px);
+    color: var(--muted-brown);
+  }
+
+  .project-title {
+    font-family: 'IM Fell English', serif;
+    font-size: 20px;
+    font-style: italic;
+    color: var(--warm-dark);
+    margin-bottom: 0.55rem;
+    line-height: 1.2;
+  }
+
+  .project-desc {
+    color: var(--muted-brown);
+    font-size: 12px;
+    line-height: 1.8;
+    margin-bottom: 1.25rem;
+    flex: 1;
+  }
+
+  .project-tags { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: auto; }
+
+  .tag {
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--faded);
+    padding: 2px 7px;
+    border: 1px solid rgba(107,95,80,0.2);
+  }
+
+  /* ── Contact ── */
+  #contact {
+    padding: 4rem 0 5rem;
+    border-top: 1px solid rgba(107,95,80,0.12);
+  }
+
+  .contact-inner {
+    display: grid;
+    grid-template-columns: 1fr 1.2fr;
+    gap: 4rem;
+    align-items: start;
+    margin-top: 2rem;
+  }
+
+  .contact-tagline {
+    font-family: 'IM Fell English', serif;
+    font-size: 30px;
+    line-height: 1.25;
+    color: var(--warm-dark);
+    margin-bottom: 1.5rem;
+  }
+
+  .contact-tagline em { font-style: italic; color: var(--muted-brown); }
+
+  .contact-links { display: flex; flex-direction: column; gap: 0.75rem; margin-top: 1rem; }
+
+  .contact-link {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: var(--muted-brown);
+    text-decoration: none;
+    font-size: 12px;
+    padding: 0.6rem 0;
+    border-bottom: 1px solid rgba(107,95,80,0.1);
+    transition: color 0.2s;
+  }
+
+  .contact-link:hover { color: var(--warm-dark); }
+
+  .link-arrow { margin-left: auto; color: var(--faded); font-size: 16px; transition: transform 0.2s; }
+  .contact-link:hover .link-arrow { transform: translateX(4px); }
+
+
+  /* ── Footer ── */
+  footer {
+    border-top: 1px solid rgba(107,95,80,0.15);
+    padding: 2rem 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    color: var(--faded);
+    text-transform: uppercase;
+  }
+
+  .footer-frames { display: flex; gap: 4px; }
+
+  .f-hole {
+    width: 5px; height: 7px;
+    border: 1px solid rgba(107,95,80,0.25);
+    border-radius: 1px;
+  }
+
+  /* ── Responsive ── */
+  @media (max-width: 680px) {
+    .about-hero { grid-template-columns: 1fr; gap: 2rem; }
+    .about-gallery { grid-template-columns: 1fr 1fr; }
+    .about-gallery .photo-wrap:first-child { grid-column: span 2; aspect-ratio: 16/9; }
+    .about-band { grid-template-columns: 1fr; }
+    .edu-grid { grid-template-columns: 1fr; }
+    .exp-item { grid-template-columns: 1fr; gap: 0.5rem; }
+    .projects-grid { grid-template-columns: 1fr; }
+    .contact-inner { grid-template-columns: 1fr; gap: 2.5rem; }
+    .about-name { font-size: 32px; }
+  }
+
+  @media (max-width: 420px) {
+    .nav-links { gap: 1rem; }
+    .nav-links li:nth-child(3),
+    .nav-links li:nth-child(4) { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="site-wrapper">
+
+  <nav>
+    <div class="logo">
+      Ambreal Jiang
+      <span>CSE Student · Builder</span>
+    </div>
+    <ul class="nav-links">
+      <li><a href="#about">About</a></li>
+      <li><a href="#education">Education</a></li>
+      <li><a href="#experience">Experience</a></li>
+      <li><a href="#projects">Projects</a></li>
+      <li><a href="#contact">Contact</a></li>
+    </ul>
+  </nav>
+
+  <div class="film-strip">
+    <div class="film-hole"></div>
+    <div class="film-hole"></div>
+    <div class="film-line"></div>
+    <span class="frame-num">CSE</span>
+    <div class="film-line"></div>
+    <div class="film-hole"></div>
+    <div class="film-hole"></div>
+  </div>
+
+  <!-- ══ ABOUT ══ -->
+  <section id="about">
+    <div class="section-label">Frame 001 — About</div>
+
+    <!-- Hero: portrait + intro text -->
+    <div class="about-hero">
+      <div class="photo-wrap about-portrait">
+        <div class="photo-inner portrait">
+          <img src="profile-photo.jpg" alt="Ambreal Jiang portrait">
+          <span class="photo-caption">Ambreal Jiang<br>UCLA, 2026</span>
+        </div>
+      </div>
+      <div>
+        <h1 class="about-name">
+          About<em> Me</em>
+        </h1>
+        <p class="about-bio">
+          I'm a Computer Science and Engineering student at UCLA interested in embedded systems, data analysis, and integrating software with hardware in real-world applications. 
+        </p>
+        <p class="about-bio">
+          I'm also incredibly interested in anything related to film and media!
+        </p>
+        
+
+        <div class="skills-row">
+          <span class="skill-chip">C++</span>
+          <span class="skill-chip">Python</span>
+          <span class="skill-chip">JavaScript</span>
+          <span class="skill-chip">Java</span>
+          <span class="skill-chip">SQL</span>
+          <span class="skill-chip">Arduino</span>
+          <span class="skill-chip">Linux</span>
+          <span class="skill-chip">Git</span>
+        </div>
+
+        <div class="about-meta">
+          <div class="meta-row">
+            <span class="meta-key">School</span>
+            <span class="meta-val">UCLA, B.S. Computer Science And Engineering</span>
+          </div>
+          <div class="meta-row">
+            <span class="meta-key">Focus</span>
+            <span class="meta-val">Embedded Systems</span>
+          </div>
+          <div class="meta-row">
+            <span class="meta-key">Status</span>
+            <span class="meta-val">Open to summer internships · Summer 2026</span>
+          </div>
+          <div class="meta-row">
+            <span class="meta-key">Based</span>
+            <span class="meta-val">Los Angeles, CA</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Photo gallery strip -->
+    <div class="about-gallery">
+      <div class="photo-wrap">
+        <div class="photo-inner scene-a">
+          <img src="tiff.jpg" alt="TIFF Next Wave Film Festival">
+          <span class="photo-caption">TIFF Next Wave Film Festival, 2025</span>
+        </div>
+      </div>
+      <div class="photo-wrap">
+        <div class="photo-inner scene-b">
+          <img src="soldering.png" alt="Soldering for Baja SAE">
+          <span class="photo-caption">Soldering for Baja SAE, 2026</span>
+        </div>
+      </div>
+    </div>
+
+  
+
+  </section>
+
+  <!-- ══ EDUCATION ══ -->
+  <section id="education">
+    <div class="section-label">Frame 002 — Education</div>
+
+    <div class="edu-grid">
+
+      <div class="edu-card">
+        <div class="edu-degree">B.S. Computer Science And Engineering</div>
+        <div class="edu-school">University of California, Los Angeles</div>
+        <div class="edu-dates">Fall 2025 — Spring 2029 · Expected</div>
+        <div class="edu-details">
+          Bruin Baja Racing (Electronics), IEEE WATT (Secretary & Webmaster), IEEE Open Project Space, Society of
+Women Engineers (SWE), ACM-W, Bruin Film Society.
+          Relevant coursework includes Data Structures and Algorithms, Computer Architecture, Linear Algebra, Multivariable Calculus,
+Physics: Mechanics, Introduction to Electrical Engineering
+        </div>
+        <div class="edu-tags">
+    
+        </div>
+      </div>
+
+
+      <div class="edu-card">
+        <div class="edu-degree">Ontario Secondary School Diploma</div>
+        <div class="edu-school">York Mills Collegiate Institute, Toronto</div>
+        <div class="edu-dates">2021 — 2025</div>
+        <div class="edu-details">
+          Peer Tutoring Club (President), Mathematics and Science Tutor, Spectrum Yearbook Committee (Journalism Executive),
+Titan Times Newspaper (Editing Executive), HOSA Chapter (Secretary), Varsity Coed Swim Team Member, Library Assistant Volunteer
+        </div>
+        <div class="edu-tags">
+          <span class="tag">Ontario Scholar</span>
+        
+        </div>
+      </div>
+
+      <div class="edu-card">
+        <div class="edu-degree">Certifications & Courses</div>
+        <div class="edu-school">Self-directed learning</div>
+        <div class="edu-dates">Ongoing</div>
+        <div class="edu-details">
+          Completed Girls Who Code's Summer Immersion Program on game design and development where I created a first-person survival horror game inspired by the film 28 Days Later and a soul collection style game in JavaScript and received and implemented feedback from software developers at Morgan Stanley
+        </div>
+        <div class="edu-tags">
+          <span class="tag">JavaSript</span>
+       
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ══ EXPERIENCE ══ -->
+  <section id="experience">
+    <div class="section-label">Frame 003 — Experience</div>
+
+    <div class="exp-list">
+
+      <div class="exp-item">
+        <div class="exp-left">
+          <div class="exp-company">IEEE WATT</div>
+          <div class="exp-dates">April 2026 —<br>Present</div>
+        </div>
+        <div>
+          <div class="exp-role">Secretary & Webmaster</div>
+          <p class="exp-desc">
+            Managed internal communications and digital organization for IEEE WATT
+          </p>
+          <ul class="exp-bullets">
+            <li>Designed and distributed weekly newsletters highlighting events and opportunities</li>
+            <li>Maintained Notion workspace and coordinated weekly officer meeting agendas</li>
+            <li>Updated website with event content, mentorship tracking, and media assets</li>
+          </ul>
+          <div class="edu-tags" style="margin-top:1rem;">
+            <span class="tag">Web Development</span>
+            <span class="tag">Internal Communication</span>
+ 
+          </div>
+        </div>
+      </div>
+
+      <div class="exp-item">
+        <div class="exp-left">
+          <div class="exp-company">UCLA Anderson School of Management Computing and Information Services</div>
+          <div class="exp-dates">Feb 2026 —<br>Present</div>
+        </div>
+        <div>
+          <div class="exp-role">First Tier Technology Consultant</div>
+          <p class="exp-desc">
+            Delivered front-line IT support for UCLA software and hardware services, AI, networking, research servers, Windows/macOS,
+Microsoft Office, library databases, cloud storage, and printing.
+          </p>
+          <ul class="exp-bullets">
+            <li>Installed, configured, and troubleshot hardware, operating systems, and campus applications</li>
+            <li> Collaborated with a team of 15+ student consultants to troubleshoot issues and maintain campus technology infrastructure.</li>
+          </ul>
+          <div class="edu-tags" style="margin-top:1rem;">
+            <span class="tag">AI</span>
+            <span class="tag">Databases</span>
+            <span class="tag">Networking</span>
+            <span class="tag">Troubleshooting</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="exp-item">
+        <div class="exp-left">
+          <div class="exp-company">Toronto International Film Festival </div>
+          <div class="exp-dates">July 2024 —<br>Jun 2025</div>
+        </div>
+        <div>
+          <div class="exp-role">Next Wave Committee Member </div>
+          <p class="exp-desc">
+            Programmed the 2025 TIFF Next Wave Film Festival with 10 films and arranged the Battle of the Scores and Young Creators
+Showcase events, workshops, guest speakers, panels, and screenings alongside committee members, TIFF staff, and sponsors
+          </p>
+          <ul class="exp-bullets">
+            <li>Moderated live panels with participating actors and directors of the 2025 TIFF Next Wave Film Festival lineup and introduced and paneled films during the 2024 Toronto International Film Festival for major sponsors, donors, and patreons</li>
+            <li>Organized monthly screenings and youth initiative events at the TIFF Bell Lightbox (∼500 attendees)</li>
+          </ul>
+          <div class="edu-tags" style="margin-top:1rem;">
+            <span class="tag">Event Planning</span>
+        
+          </div>
+        </div>
+      </div>
+
+      <div class="exp-item">
+        <div class="exp-left">
+          <div class="exp-company">Bayrest Geriatric Hospital</div>
+          <div class="exp-dates">Oct 2022 —<br>May 2025</div>
+        </div>
+        <div>
+          <div class="exp-role">Recreation Program Volunteer (250+ Hours)</div>
+          <p class="exp-desc">
+            Hosted events such as weekly movie nights for geriatric long-term care patients (∼20 attendees)
+          <ul class="exp-bullets">
+            <li>Set up and managed AV equipment and troubleshot various technological issues</li>
+            <li>Received a 2 to 4 year Ontario Volunteer Service Award for continued volunteer service with Baycrest Hospital (2025)</li>
+          </ul>
+          <div class="edu-tags" style="margin-top:1rem;">
+            <span class="tag">AV</span>
+            <span class="tag">Troubleshooting</span>
+            <span class="tag">Event Planning</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ══ PROJECTS ══ -->
+  <section id="projects">
+    <div class="section-label">Frame 004 — Selected Work</div>
+
+    <div class="projects-grid">
+
+      <!-- PROJECT 01 — replace src="" with your video file path or URL -->
+      <div class="project-card">
+        <div class="project-card-top">
+          <div class="project-frame-num">01A</div>
+          <a class="project-arrow" href="https://github.com/ambrealj/gamebuino" target="_blank" rel="noopener noreferrer" title="View project">↗</a>
+        </div>
+        <div class="project-title">Gamebuino</div>
+        <p class="project-desc">TicTacToe gameBoy controlled with a joystick and displayed on OLED coded on Arduino IDE</p>
+        <div class="project-tags">
+          <span class="tag">Arduino</span>
+          <span class="tag">C++</span>
+          <span class="tag">OLED</span>
+          <span class="tag">Game Development</span>
+        </div>
+      </div>
+
+      <!-- PROJECT 02 — replace src="" with your video file path or URL -->
+      <div class="project-card">
+        <div class="project-card-top">
+          <div class="project-frame-num">02A</div>
+          <a class="project-arrow" href="https://github.com/ambrealj/Wheel-Speed-Sensor" target="_blank" rel="noopener noreferrer" title="View project">↗</a>
+        </div>
+        <div class="project-title">Wheel Speed Sensor</div>
+        <p class="project-desc">Worked in a team of 3 for Bruin Baja Racing Electronics to improve acceleration and handling by developing a wheel-speed monitoring system using a PID controller. Programmed feedback loops for real-time data acquisition on Arduino IDE to read in a car wheel’s RPM, integrating a geartooth sensor and a switch. Built a dashboard interface for speed visualization using an LCD screen with I2C.</p>
+        <div class="project-tags">
+          <span class="tag">Arduino</span>
+          <span class="tag">C++</span>
+          <span class="tag">PID Control</span>
+          <span class="tag">LCD</span>
+        </div>
+      </div>
+
+      <!-- PROJECT 03 — replace src="" with your video file path or URL -->
+      <div class="project-card">
+        <div class="project-card-top">
+          <div class="project-frame-num">03A</div>
+          <a class="project-arrow" href="https://github.com/ambrealj/ipoduino" target="_blank" rel="noopener noreferrer" title="View project">↗</a>
+        </div>
+        <div class="project-title">Ipoduino</div>
+        <p class="project-desc">Arduino code for breadboard interface created using pushbuttons, an RGB LED, and a passive buzzer to play the star wars theme song, the jaws theme song, and jingle bells with IEEE OPS</p>
+        <div class="project-tags">
+          <span class="tag">Arduino</span>
+          <span class="tag">C++</span>
+    
+        </div>
+      </div>
+
+
+    </div>
+  </section>
+
+  <!-- ══ CONTACT ══ -->
+  <section id="contact">
+    <div class="section-label">Frame 005 — Contact</div>
+    <div class="contact-inner">
+      <div>
+        <h2 class="contact-tagline">Contact <em>Me.</em></h2>
+        <div class="contact-links">
+          <a class="contact-link" href="mailto:ambrealj@ucla.edu">
+            <span>✉</span>
+            <span>ambrealj@ucla.edu</span>
+            <span class="link-arrow">→</span>
+          </a>
+          <a class="contact-link" href="https://github.com/ambrealj" target="_blank" rel="noopener">
+            <span>◯</span>
+            <span>GitHub</span>
+            <span class="link-arrow">→</span>
+          </a>
+          <a class="contact-link" href="www.linkedin.com/in/ambreal-jiang" target="_blank" rel="noopener">
+            <span>◻</span>
+            <span>LinkedIn</span>
+            <span class="link-arrow">→</span>
+          </a>
+          <a class="contact-link" href="https://drive.google.com/file/d/1yHUQo-bBP6A49gHEG7geBdy5D8BqGrk5/view?usp=sharing" target="_blank" rel="noopener">
+            <span>◈</span>
+            <span>Resume / CV</span>
+            <span class="link-arrow">→</span>
+          </a>
+        </div>
+      </div>
+    
+    </div>
+  </section>
+
+  <footer>
+    <div class="footer-frames">
+      <div class="f-hole"></div><div class="f-hole"></div><div class="f-hole"></div>
+      <div class="f-hole"></div><div class="f-hole"></div><div class="f-hole"></div>
+    </div>
+    <span>Ambreal Jiang</span>
+    <div class="footer-frames">
+      <div class="f-hole"></div><div class="f-hole"></div><div class="f-hole"></div>
+      <div class="f-hole"></div><div class="f-hole"></div><div class="f-hole"></div>
+    </div>
+  </footer>
+
+</div>
+
+</body>
+</html>
